@@ -20,6 +20,7 @@ public class MsPacMan {
         System.exit(1);
     }
     public static void main(String[] args) throws Exception {
+        args = new String[]{"MyAgent"};
         String agentClass = null;
         String agentId = null;
         int level = 1;
