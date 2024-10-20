@@ -7,8 +7,6 @@ import java.util.*;
 
 public final class MyAgent extends PacManControllerBase
 {
-	public static final long PILL_SCORE = 10;
-	public static final long BIG_PILL_SCORE = 100;
 
 	List<Integer> currentSolution;
 
@@ -47,80 +45,39 @@ public final class MyAgent extends PacManControllerBase
 			return initialState;
 		}
 
-		/*
-		@Override
-		public long getEstimate(Game game) {
-			if(isGoal(game)){
-				return 0;
-			}
-			if(game.gameOver()){
-				return UNREACHABLE_COST();
-			}
-			int ghostProximityFactor = 0;
-			for(int g = 0;g<4; ++g){
-				var ghostLoc = game.getCurGhostLoc(g);
-				var currLoc = game.getCurPacManLoc();
-				if(game.getEdibleTime(g) > 1) continue;
-				for(var neighbor: game.getGhostNeighbours(g)){
-					if(neighbor < 0) continue;
-					if(game.getCurPacManLoc() == neighbor){
-						return UNREACHABLE_COST();
-					}
-				}
-				var ghostDistance = game.getManhattanDistance(game.getCurPacManLoc(), game.getCurGhostLoc(g));
-				if(ghostDistance < 5){
-					ghostProximityFactor += 5 - ghostDistance;
-				}
-			}
-
-			long livesFactor = (3L - game.getLivesRemaining()) * 40000;
-			//if(ghostProximityFactor > 0){
-			//	livesFactor *= 2;
-			//}
-
-			return livesFactor + ghostProximityFactor * 5000L  + game.getNumActivePills() * 5L + game.getNumActivePowerPills() * 5L;
-		}
-
-		@Override
-		public long getActionCost(Game game, Integer movementDirection) {
-			var pos = game.getNeighbour(game.getCurPacManLoc(), movementDirection);
-			for(int g = 0;g<4; ++g){
-				if(game.getCurGhostLoc(g) == pos){
-					if(game.getEdibleTime(g) > 1) return 1;
-					return UNREACHABLE_COST();
-				}
-			}
-			var pillIndex = game.getPillIndex(pos);
-			var powerPillIndex = game.getPowerPillIndex(pos);
-			if(pillIndex >= 0 && game.checkPill(pillIndex))
-				return 5;
-			if(powerPillIndex >= 0 && game.checkPowerPill(powerPillIndex))
-				return 5;
-			return movementDirection < 0 ? 2000 : 100;
-		}
-		*/
 		@Override
 		public long getEstimate(Game game) {
 			if(game.gameOver() || game.getLivesRemaining() < initialState.getLivesRemaining()){
 				return UNREACHABLE_COST();
 			}
+			long initialPills = initialState.getNumActivePills() + initialState.getNumActivePowerPills();
 			long numPills = game.getNumActivePills() + game.getNumActivePowerPills();
+			if(initialPills <= 10){
+				if(numPills < initialPills && numPills <= 6){
+					return 0;
+				}
+				return game.getDistanceToNearestPill() * 50L;
+			}
+
+			if(numPills < initialPills && numPills <= 6){
+				return 0;
+			}
 
 			long ret = 0;
-			var pillsInTier = Math.min(4L, numPills);
-			ret += pillsInTier * 500L;
-			numPills -= pillsInTier;
+			long pillsInTier;
+			//pillsInTier = Math.min(4L, numPills);
+			//ret += pillsInTier * 5L;
+			//numPills -= pillsInTier;
 
-			pillsInTier = Math.min(10L, numPills);
-			ret += pillsInTier * 100L;
-			numPills -= pillsInTier;
+			//pillsInTier = Math.min(10L, numPills);
+			//ret += pillsInTier * 10L;
+			//numPills -= pillsInTier;
 
-			pillsInTier = Math.min(40L, numPills);
-			ret += pillsInTier * 50L;
-			numPills -= pillsInTier;
+			//pillsInTier = Math.min(40L, numPills);
+			//ret += pillsInTier * 50L;
+			//numPills -= pillsInTier;
 
-			ret += numPills * 15L;
-
+			ret += numPills * 100L;
 			return ret;
 		}
 
