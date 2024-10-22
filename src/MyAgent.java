@@ -1,12 +1,14 @@
 import controllers.pacman.PacManControllerBase;
-import game.core.G;
 import game.core.Game;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 public final class MyAgent extends PacManControllerBase
 {
+
+	static void report(String format, Object... args){
+		//System.out.println(String.format(format, args));
+	}
 
 	List<Integer> currentSolution;
 
@@ -24,10 +26,10 @@ public final class MyAgent extends PacManControllerBase
 		var problem = new PacmanProblem(game);
 		var solution = doAStar(problem, currentTime + (long)(timeForComputation * 0.9f));
 		currentSolution = solution;
-		System.out.println(String.format("time: %d", game.getLevelTime()));
+		report("time: %d", game.getLevelTime());
 
 		if(solution == null || solution.isEmpty()){
-			System.out.println("RANDOM!");
+			report("RANDOM!");
 			boolean includeReverse = game.rand().nextFloat() < 0.05f;
 			int[] directions = game.getPossiblePacManDirs(includeReverse);
 			pacman.set(directions[game.rand().nextInt(directions.length)]);
@@ -37,6 +39,16 @@ public final class MyAgent extends PacManControllerBase
 		}
 	}
 
+	@Override
+	public void nextLevel(Game game) {
+		super.nextLevel(game);
+
+		var timePerAStarIteration = timeSpentInAStarSoFar_nanos / aStarIterationsPerformedSoFar;
+		var timePerAStarRun = timeSpentInAStarSoFar_nanos / aStarRunsPerformedSoFar;
+		System.err.println(String.format("Level %d... %d ns per aStar iteration, %d ns per run (%d iterations, %d runs, %d ns total)",game.getCurLevel()-1, timePerAStarIteration, timePerAStarRun, aStarIterationsPerformedSoFar,aStarRunsPerformedSoFar, timeSpentInAStarSoFar_nanos));
+		timeSpentInAStarSoFar_nanos = 0;
+		aStarIterationsPerformedSoFar = 0;
+	}
 
 	public static record PacmanProblem(Game initialState) implements HeuristicProblem<Game, Integer>{
 
@@ -47,12 +59,17 @@ public final class MyAgent extends PacManControllerBase
 
 		@Override
 		public long getEstimate(Game game) {
-			if(game.gameOver() || game.getLivesRemaining() < initialState.getLivesRemaining()){
+			if(game.gameOver()){
+				if(game.getLivesRemaining() > 0)
+					return 0;
+				else return UNREACHABLE_COST();
+			}
+			if(game.getLivesRemaining() < initialState.getLivesRemaining()){
 				return UNREACHABLE_COST();
 			}
 			long initialPills = initialState.getNumActivePills() + initialState.getNumActivePowerPills();
 			long numPills = game.getNumActivePills() + game.getNumActivePowerPills();
-			if(initialPills <= 10){
+			if(initialPills <= 15){
 				if(numPills < initialPills && numPills <= 6){
 					return 0;
 				}
@@ -63,22 +80,7 @@ public final class MyAgent extends PacManControllerBase
 				return 0;
 			}
 
-			long ret = 0;
-			long pillsInTier;
-			//pillsInTier = Math.min(4L, numPills);
-			//ret += pillsInTier * 5L;
-			//numPills -= pillsInTier;
-
-			//pillsInTier = Math.min(10L, numPills);
-			//ret += pillsInTier * 10L;
-			//numPills -= pillsInTier;
-
-			//pillsInTier = Math.min(40L, numPills);
-			//ret += pillsInTier * 50L;
-			//numPills -= pillsInTier;
-
-			ret += numPills * 100L;
-			return ret;
+			return numPills * 100L;
 		}
 
 		@Override
@@ -93,22 +95,22 @@ public final class MyAgent extends PacManControllerBase
 		}
 
 		@Override
-		public Iterable<Integer> getAvailableActions(Game game) {
+		public List<Integer> getAvailableActions(Game game) {
 			if(game.gameOver())
 				return List.of();
 
 			var ret = new ArrayList<Integer>(4);
 			for(var dir : game.getPossiblePacManDirs(false))
 				ret.add(dir);
-			//ret.add(- ( 1 + game.getReverse(game.getCurPacManDir())) ); //direction backwards as negative number
+			//ret.add(- ( 1 + game.getReverse(game.getCurPacManDir())) ); //direction backwards as negative number so that we can distinguish it from the others
 			return ret;
 		}
 
 
 		@Override
-		public Game getActionResult(Game game, Integer direction) {
+		public Game getActionResult(Game game, Integer direction, boolean isTailOperation) {
 			int dir = direction;
-			var ret = game.copy();
+			Game ret = game.copy();// isTailOperation ? game : game.copy();
 			if(dir < 0) dir = (-dir) - 1;
 			ret.advanceGame(dir);
 			if(ret.getLevelTime() > 2700){
@@ -132,8 +134,8 @@ public final class MyAgent extends PacManControllerBase
 		long UNREACHABLE_COST();
 
 
-		Iterable<TAction> getAvailableActions(TState state);
-		TState getActionResult(TState state, TAction action);
+		List<TAction> getAvailableActions(TState state);
+		TState getActionResult(TState state, TAction action, boolean isTailOperation);
 	}
 
 
@@ -179,20 +181,30 @@ public final class MyAgent extends PacManControllerBase
 		}
 	}
 
+	public static long aStarIterationsPerformedSoFar = 0;
+	public static long aStarRunsPerformedSoFar = 0;
+	public static long timeSpentInAStarSoFar_nanos = 0;
 
 	public static<TState, TAction> List<TAction> doAStar(HeuristicProblem<TState, TAction> problem, long timeDue){
+		++aStarRunsPerformedSoFar;
 		var initialState = problem.getInitialState();
 		var initialNode = AStarNode.<TState, TAction>makeEmpty(initialState, problem.getEstimate(initialState));
 
 		var queue = new PriorityQueue<AStarNode<TState, TAction>>();
 		queue.add(initialNode);
 
+		long startTime = System.nanoTime();
 		while(System.currentTimeMillis() < timeDue && !queue.isEmpty()){
+			++aStarIterationsPerformedSoFar;
 			var current = queue.poll();
 
-			for(var action : problem.getAvailableActions(current.state)){
+			var availableActions = problem.getAvailableActions(current.state);
+			for(int t=0;t<availableActions.size();++t){
+				var action = availableActions.get(t);
+				boolean isLast = current != initialNode && (t == (availableActions.size() - 1));
 				var cost = problem.getActionCost(current.state, action);
-				var resultState = problem.getActionResult(current.state, action);
+				var resultState = problem.getActionResult(current.state, action, isLast);
+				//if(isLast) current.state = null;
 				var estimate = problem.getEstimate(resultState);
 
 				if(cost + estimate >= problem.UNREACHABLE_COST())
@@ -200,19 +212,21 @@ public final class MyAgent extends PacManControllerBase
 				var newNode = current.makeNext(action, resultState, cost, estimate);
 				if(estimate == 0){
 					//goal state
-					System.out.println("GOAL SOLUTION!");
+					report("GOAL SOLUTION!");
+					timeSpentInAStarSoFar_nanos += System.nanoTime() - startTime;
 					return newNode.getSolution();
 				}
 				queue.add(newNode);
 			}
 		}
+		timeSpentInAStarSoFar_nanos += System.nanoTime() - startTime;
 
 		if(queue.isEmpty())
 			return null;
 
 		var top = queue.peek();
 		var solution = top.getSolution();
-		System.out.println(String.format("solution... length: %d, cost: %d, estimate: %d", solution.size(), top.cost, top.estimatedCost));
+		report("solution... length: %d, cost: %d, estimate: %d", solution.size(), top.cost, top.estimatedCost);
 		return solution;
 	}
 

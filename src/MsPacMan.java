@@ -69,7 +69,7 @@ public class MsPacMan {
                 return;
             }
             
-            config.visualize = false;
+            config.visualize = true;
             EvaluateAgent evaluate =
                 new EvaluateAgent(seedSpecified ? seed : 0, config, sim,
                                   resultdir == null ? null : new File(resultdir));
