@@ -110,7 +110,7 @@ public final class JakubHronik extends PacManControllerBase
 		@Override
 		public Game getActionResult(Game game, Integer direction, boolean isTailOperation) {
 			int dir = direction;
-			Game ret = game.copy();// isTailOperation ? game : game.copy();
+			Game ret = isTailOperation ? game : game.copy();
 			if(dir < 0) dir = (-dir) - 1;
 			ret.advanceGame(dir);
 			if(ret.getLevelTime() > 2700){
