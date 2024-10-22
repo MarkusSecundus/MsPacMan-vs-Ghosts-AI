@@ -3,7 +3,7 @@ import game.core.Game;
 
 import java.util.*;
 
-public final class MyAgent extends PacManControllerBase
+public final class JakubHronik extends PacManControllerBase
 {
 
 	static void report(String format, Object... args){

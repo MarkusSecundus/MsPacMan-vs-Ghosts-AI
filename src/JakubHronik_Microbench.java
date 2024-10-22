@@ -1,17 +1,12 @@
 import controllers.ghosts.game.GameGhosts;
-import controllers.pacman.HumanPacMan;
-import controllers.pacman.IPacManController;
-import game.GameConfig;
-import game.PacManSimulator;
 import game.SimulatorConfig;
 import game.core.Game;
 import game.core._G_;
-import tournament.EvaluateAgent;
 
-import java.io.File;
-import java.util.Random;
+// Written by Jakub Hroník
 
-public class PacmanMicrobench {
+
+public class JakubHronik_Microbench {
 
     static final int WARMUP_ITERATIONS = 500000;
     static final int BENCHMARK_ITERATIONS = 500000;
@@ -37,7 +32,7 @@ public class PacmanMicrobench {
         SimulatorConfig config = new SimulatorConfig();
         config.ghostsController = new GameGhosts(4);
         config.game.startingLevel = 1;
-        config.pacManController = new MyAgent();
+        config.pacManController = new JakubHronik();
         config.game.seed = SEED;
         _G_ game = new _G_();
         game.newGame(config.game, config.ghostsController);

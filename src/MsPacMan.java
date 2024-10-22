@@ -7,6 +7,9 @@ import controllers.ghosts.game.GameGhosts;
 import controllers.pacman.*;
 import tournament.EvaluateAgent;
 
+
+// Written by Jakub Hroník
+
 public class MsPacMan {
     static void usage() {
         out.println("usage: mspac [<agent-classname>] [<option>...]");
@@ -20,7 +23,7 @@ public class MsPacMan {
         System.exit(1);
     }
     public static void main(String[] args) throws Exception {
-        args = new String[]{"MyAgent"};
+        args = new String[]{"JakubHronik"};
         String agentClass = null;
         String agentId = null;
         int level = 1;

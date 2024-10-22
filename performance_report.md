@@ -70,7 +70,7 @@ Je uklidňující vidět, že kompletní jeden běh algoritmu v průměru trvá 
 
 Také je vidět, že jedna iterace algoritmu odpovídá cca necelým dvěma klonováním forward modelu.   
 
-Tohle pozorování ve mně vyvolalo myšlenku na optimalizaci - pokud očividně v průměru provede a* v jednom uzlu takhle málo (typicky < 2) větvení, proč dělám pokaždé klon herního stavu, když by někdy stačilo znovu využít ten, co už mám z parenta? Obecně, můžu vlastně forward model z parenta zrecyklovat vždycky - pro posledního syna, kterého otevírám.
+Tohle pozorování ve mně vyvolalo myšlenku na optimalizaci - pokud očividně v průměru provede A* v jednom uzlu takhle málo (typicky < 2) větvení, proč dělám pokaždé klon herního stavu, když by někdy stačilo znovu využít ten, co už mám z parenta? Obecně, můžu vlastně forward model z parenta zrecyklovat vždycky - pro posledního syna, kterého otevírám.
 
 
 Po troše debugování jsem tuhle myšlenku úspěšně implementoval - chování pacmana se zdá nezměněné a výsledky velmi silně předčily očekávání:
